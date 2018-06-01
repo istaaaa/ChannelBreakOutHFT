@@ -1,0 +1,17 @@
+# directory
+tmp
+__pycache__
+
+# user data
+*.json
+*.log
+*.csv
+*.log.*
+*.png
+
+# default config
+!*_default.json
+!*_default.csv
+
+!.gitkeep
+!api_permission.png
