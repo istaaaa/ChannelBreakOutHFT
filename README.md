@@ -1,2 +1,2 @@
 # ChannelBreakOutHFT
-Channel break out strategy fo High Frequency Trading.
+Channel break out strategy for High Frequency Trading.
