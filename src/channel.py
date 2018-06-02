@@ -292,21 +292,21 @@ class ChannelBreakOut:
 
         judgement = [0,0,0,0]
         #上抜けでエントリー 
-        if high > entryHighLine[-1] and pos == 0 and rcirangetermNine[-1] < 80:
+        if high > entryHighLine[-1] and pos == 0 and rcirangetermNine[-1] < 75:
             judgement[0] = 1
-            # rci36期間線が80以上のときはエントリーしない 
-            if rcirangetermThirtySix[-1] > 80:
+            # rci36期間線が75以上のときはエントリーしない 
+            if rcirangetermThirtySix[-1] > 75:
                 judgement[0] = 0
-            # rci52期間線が80以上のときはエントリーしない 
-            if rcirangetermFiftytwo[-1] > 80:
+            # rci52期間線が75以上のときはエントリーしない 
+            if rcirangetermFiftytwo[-1] > 75:
                 judgement[0] = 0
         #下抜けでエントリー 
-        if low < entryLowLine[-1] and pos == 0 and rcirangetermNine[-1] > -80:
+        if low < entryLowLine[-1] and pos == 0 and rcirangetermNine[-1] > -75:
             judgement[1] = 1
-            # rci36期間線が-80以下のときはエントリーしない 
-            if rcirangetermThirtySix[-1] < -80:
+            # rci36期間線が-75以下のときはエントリーしない 
+            if rcirangetermThirtySix[-1] < -75:
                 judgement[1] = 0
-            # rci52irangetermFiftytwo[-1] < -80:
+            if rci52irangetermFiftytwo[-1] < -75:
                 judgement[1] = 0
         #下抜けでクローズ 
         if low < closeLowLine[-1] and pos == 1 and ordersize == 0 and childordersize == 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
@@ -316,14 +316,14 @@ class ChannelBreakOut:
             judgement[3] = 1
 
         #特殊状況のエントリー、クローズ 
-        if pos == 0 and rcirangetermNine[-1] > 80 and rcirangetermThirtySix[-1] > 80 and rcirangetermFiftytwo[-1] > 80:
+        if pos == 0 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
             judgement[1] = 1        #ショートエントリー
-        if pos == 1 and rcirangetermNine[-1] > 80 and rcirangetermThirtySix[-1] > 80 and rcirangetermFiftytwo[-1] > 80:
+        if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 80:
             judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
-        if pos == 0 and rcirangetermNine[-1] < -80 and rcirangetermThirtySix[-1] < -80 and rcirangetermFiftytwo[-1] < -80:
+        if pos == 0 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
             judgement[0] = 1        #ロングエントリー
-        if pos == 1 and rcirangetermNine[-1] < -80 and rcirangetermThirtySix[-1] < -80 and rcirangetermFiftytwo[-1] < -80:
-            judgement[3] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
+        if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
+            judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消)
 
         return judgement
     
