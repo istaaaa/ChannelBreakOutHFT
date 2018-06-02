@@ -274,8 +274,13 @@ class ChannelBreakOut:
 
         #rciもチェックする
         judgementrci = [0,0,0,0]
-        rcirangeterm = self.calc_rci(df_candleStick["high"][:],self.rangeTerm);
-        logging.info('rcirangeterm:%s ', rcirangeterm[-1]);
+        #9期間RCIの計算 
+        rcirangetermNine = self.calc_rci(df_candleStick["high"][:],9);
+        logging.info('rcirangetermNine:%s ', rcirangetermNine[-1]);
+        rcirangetermThirtySix = self.calc_rci(df_candleStick["high"][:],36);
+        logging.info('rcirangetermThirtySix:%s ', rcirangetermThirtySix[-1]);
+        rcirangetermFiftytwo = self.calc_rci(df_candleStick["high"][:],52);
+        logging.info('rcirangetermFiftytwo:%s ', rcirangetermFiftytwo[-1]);
 
         #1分ごとにposを見直す 
         side = "";
@@ -286,18 +291,40 @@ class ChannelBreakOut:
         side , size = self.order.getmypos();
 
         judgement = [0,0,0,0]
-        #上抜けでエントリー
-        if high > entryHighLine[-1] and pos == 0 and rcirangeterm[-1] < 80:
+        #上抜けでエントリー 
+        if high > entryHighLine[-1] and pos == 0 and rcirangetermNine[-1] < 80:
             judgement[0] = 1
-        #下抜けでエントリー
-        if low < entryLowLine[-1] and pos == 0 and rcirangeterm[-1] > -80:
+            # rci36期間線が80以上のときはエントリーしない 
+            if rcirangetermThirtySix[-1] > 80:
+                judgement[0] = 0
+            # rci52期間線が80以上のときはエントリーしない 
+            if rcirangetermFiftytwo[-1] > 80:
+                judgement[0] = 0
+        #下抜けでエントリー 
+        if low < entryLowLine[-1] and pos == 0 and rcirangetermNine[-1] > -80:
             judgement[1] = 1
-        #下抜けでクローズ
+            # rci36期間線が-80以下のときはエントリーしない 
+            if rcirangetermThirtySix[-1] < -80:
+                judgement[1] = 0
+            # rci52irangetermFiftytwo[-1] < -80:
+                judgement[1] = 0
+        #下抜けでクローズ 
         if low < closeLowLine[-1] and pos == 1 and ordersize == 0 and childordersize == 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
             judgement[2] = 1
-        #上抜けでクローズ
+        #上抜けでクローズ 
         if high > closeHighLine[-1] and pos == -1 and ordersize == 0 and childordersize == 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
             judgement[3] = 1
+
+        #特殊状況のエントリー、クローズ 
+        if pos == 0 and rcirangetermNine[-1] > 80 and rcirangetermThirtySix[-1] > 80 and rcirangetermFiftytwo[-1] > 80:
+            judgement[1] = 1        #ショートエントリー
+        if pos == 1 and rcirangetermNine[-1] > 80 and rcirangetermThirtySix[-1] > 80 and rcirangetermFiftytwo[-1] > 80:
+            judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
+        if pos == 0 and rcirangetermNine[-1] < -80 and rcirangetermThirtySix[-1] < -80 and rcirangetermFiftytwo[-1] < -80:
+            judgement[0] = 1        #ロングエントリー
+        if pos == 1 and rcirangetermNine[-1] < -80 and rcirangetermThirtySix[-1] < -80 and rcirangetermFiftytwo[-1] < -80:
+            judgement[3] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
+
         return judgement
     
     #rciのdの計算
@@ -367,7 +394,8 @@ class ChannelBreakOut:
         ローソク足は1分ごとに取得するのでインデックスが-1のもの（現在より1本前）をつかう．
         """
         judgementrci = [0,0,0,0]
-        rcirangeterm = self.calc_rci(df_candleStick["high"][:],self.rangeTerm);
+        #9期間RCIの計算 
+        rcirangeterm = self.calc_rci(df_candleStick["high"][:],9);
         logging.info('rcirangeterm:%s ', rcirangeterm[-1]);
 
         #-85こえたときBuyエントリー
