@@ -265,11 +265,18 @@ class ChannelBreakOut:
                 pass
         return judgement
 
-    def judgeForLoop(self, high, low, entryHighLine, entryLowLine, closeHighLine, closeLowLine, pos):
+    def judgeForLoop(self, high, low, entryHighLine, entryLowLine, closeHighLine, closeLowLine, df_candleStick, pos):
         """
         売り買い判断．入力した価格が期間高値より高ければ買いエントリー，期間安値を下抜けたら売りエントリー．judgementリストは[買いエントリー，売りエントリー，買いクローズ（売り），売りクローズ（買い）]のリストになっている．（値は0or1）
         ローソク足は1分ごとに取得するのでインデックスが-1のもの（現在より1本前）をつかう．
+
         """
+
+        #rciもチェックする
+        judgementrci = [0,0,0,0]
+        rcirangeterm = self.calc_rci(df_candleStick["high"][:],self.rangeTerm);
+        logging.info('rcirangeterm:%s ', rcirangeterm[-1]);
+
         #1分ごとにposを見直す 
         side = "";
         size = 0;
@@ -280,10 +287,10 @@ class ChannelBreakOut:
 
         judgement = [0,0,0,0]
         #上抜けでエントリー
-        if high > entryHighLine[-1] and pos == 0 :
+        if high > entryHighLine[-1] and pos == 0 and rcirangeterm[-1] < 80:
             judgement[0] = 1
         #下抜けでエントリー
-        if low < entryLowLine[-1] and pos == 0 :
+        if low < entryLowLine[-1] and pos == 0 and rcirangeterm[-1] > -80:
             judgement[1] = 1
         #下抜けでクローズ
         if low < closeLowLine[-1] and pos == 1 and ordersize == 0 and childordersize == 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
@@ -843,7 +850,7 @@ class ChannelBreakOut:
             logging.info('pos:%s ', pos);
 
             #売り買い判定
-            judgement = self.judgeForLoop(high, low, entryHighLine, entryLowLine, closeHighLine, closeLowLine, pos)
+            judgement = self.judgeForLoop(high, low, entryHighLine, entryLowLine, closeHighLine, closeLowLine, df_candleStick, pos)
             #judgement = self.judgeForLooprci(high, low, entryHighLine, entryLowLine, closeHighLine, closeLowLine, df_candleStick, pos)
 
             try:
