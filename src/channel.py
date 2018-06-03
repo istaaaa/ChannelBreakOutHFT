@@ -304,7 +304,7 @@ class ChannelBreakOut:
         if low < entryLowLine[-1] and pos == 0 and rcirangetermNine[-1] > -75:
             judgement[1] = 1
             # rci36期間線が-75以下のときはエントリーしない 
-            if rcirangetermThirtySix[-1] < -75:30
+            if rcirangetermThirtySix[-1] < -75:
                 judgement[1] = 0
             if rcirangetermFiftytwo[-1] < -75:
                 judgement[1] = 0
