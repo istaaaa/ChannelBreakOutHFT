@@ -369,19 +369,19 @@ class ChannelBreakOut:
         rangeLow = pd.Series(wvf).rolling(lb, 1).min() * pl
 
         if wvf[len(wvf)-1] > rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] > upperBand[len(wvf)-1]:
-            pass
+            return 'buy'
             #print("VIX: 緑")
-        elif wvf[len(wvf)-2] > rangeHigh[len(wvf)-2] or wvf[len(wvf)-2] > upperBand[len(wvf)-2]:
-            if wvf[len(wvf)-1] < rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] < upperBand[len(wvf)-1]:
+        #elif wvf[len(wvf)-2] > rangeHigh[len(wvf)-2] or wvf[len(wvf)-2] > upperBand[len(wvf)-2]:
+            #if wvf[len(wvf)-1] < rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] < upperBand[len(wvf)-1]:
                 #print('VIX: 緑からグレー')
-                return 'buy'
+                #return 'buy'
         elif wvf[len(wvf)-1] < rangeLow[len(wvf)-1] or wvf[len(wvf)-1] < lowerBand[len(wvf)-1]:
-            pass
+            return 'sell'
             #print("VIX: 赤")
-        elif wvf[len(wvf)-2] < rangeLow[len(wvf)-2] or wvf[len(wvf)-2] < lowerBand[len(wvf)-2]:
-            if wvf[len(wvf)-1] > rangeLow[len(wvf)-1] or wvf[len(wvf)-1] > lowerBand[len(wvf)-1]:
+        #elif wvf[len(wvf)-2] < rangeLow[len(wvf)-2] or wvf[len(wvf)-2] < lowerBand[len(wvf)-2]:
+            #if wvf[len(wvf)-1] > rangeLow[len(wvf)-1] or wvf[len(wvf)-1] > lowerBand[len(wvf)-1]:
                 #print('VIX: 赤からグレー')
-                return 'sell'
+                #return 'sell'
         else:
             pass
             #print("VIX: グレー")
