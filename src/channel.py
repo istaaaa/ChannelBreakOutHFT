@@ -368,6 +368,7 @@ class ChannelBreakOut:
         rangeHigh = pd.Series(wvf).rolling(lb, 1).max() * ph
         rangeLow = pd.Series(wvf).rolling(lb, 1).min() * pl
 
+        #緑が点灯しているときはエントリーしない
         if wvf[len(wvf)-1] > rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] > upperBand[len(wvf)-1]:
             return 'buy'
             #print("VIX: 緑")
@@ -375,6 +376,7 @@ class ChannelBreakOut:
             #if wvf[len(wvf)-1] < rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] < upperBand[len(wvf)-1]:
                 #print('VIX: 緑からグレー')
                 #return 'buy'
+        #赤が点灯しているときはエントリーしない
         elif wvf[len(wvf)-1] < rangeLow[len(wvf)-1] or wvf[len(wvf)-1] < lowerBand[len(wvf)-1]:
             return 'sell'
             #print("VIX: 赤")
@@ -719,6 +721,26 @@ class ChannelBreakOut:
             fileName = ""
         return fileName
 
+    def Isserverishealthy(self):
+        #取引所のヘルスチェック
+        try:
+            boardState = self.order.getboardstate()
+            serverHealth = True
+            permitHealth1 = ["NORMAL", "BUSY", "VERY BUSY"]
+            permitHealth2 = ["NORMAL", "BUSY", "VERY BUSY", "SUPER BUSY"]
+            if (boardState["health"] in permitHealth1) and boardState["state"] == "RUNNING" and self.healthCheck:
+                return True;
+            elif (boardState["health"] in permitHealth2) and boardState["state"] == "RUNNING" and not self.healthCheck:
+                return True;
+            else:
+                serverHealth = False
+                logging.info('Server is %s/%s. Do not order.', boardState["health"], boardState["state"])
+                return False;
+        except:
+            serverHealth = False
+            logging.error("Health check failed")
+            return False;
+
     def loop(self):
         """
         注文の実行ループを回す関数
@@ -956,6 +978,9 @@ class ChannelBreakOut:
                     orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 3000,parentprice = self.parentprice ,price = self.parentprice + 500)
                     time.sleep(60);
 
+                    #serverHealthを再確認 
+                    serverHealth = Isserverishealthy();
+
                     side = ""
                     size = 0
                     side , size = self.order.getmypos();
@@ -987,6 +1012,9 @@ class ChannelBreakOut:
                     #IFOCOはSTOPが2000上,指値が500下
                     orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 3000,parentprice = self.parentprice ,price = self.parentprice - 500)
                     time.sleep(60);
+
+                    #serverHealthを再確認 
+                    serverHealth = Isserverishealthy();
 
                     side = ""
                     size = 0
@@ -1039,13 +1067,16 @@ class ChannelBreakOut:
                     orderId = self.order.OCO( side="SELL", size=lot,trigger_price = self.parentprice - 500, price = self.parentprice + 500)
                     time.sleep(40);
 
+                    #serverHealthを再確認 
+                    serverHealth = Isserverishealthy();
+
                     side = ""
                     size = 0
                     side , size = self.order.getmypos();
                     if size != 0:
                         pass;
                     #getmyposに返り値がなかったとき 
-                    elif size ==0 and side == "":
+                    elif size ==0 and side == "" and serverHealth:
                         logging.info("Close Position")
                         pos = 0;
 
@@ -1113,13 +1144,16 @@ class ChannelBreakOut:
                     orderId = self.order.OCO( side="BUY", size=lot,trigger_price = self.parentprice + 500, price = self.parentprice - 500)
                     time.sleep(40);
 
+                    #serverHealthを再確認 
+                    serverHealth = Isserverishealthy();
+
                     side = ""
                     size = 0
                     side , size = self.order.getmypos();
                     if size != 0:
                         pass;
                     #getmyposに返り値がなかったとき 
-                    elif size ==0 and side == "":
+                    elif size ==0 and side == "" and serverHealth:
                         logging.info("Close Position")
                         pos = 0;
 
