@@ -979,7 +979,7 @@ class ChannelBreakOut:
                     time.sleep(60);
 
                     #serverHealthを再確認 
-                    serverHealth = Isserverishealthy();
+                    serverHealth = self.Isserverishealthy();
 
                     side = ""
                     size = 0
@@ -1014,7 +1014,7 @@ class ChannelBreakOut:
                     time.sleep(60);
 
                     #serverHealthを再確認 
-                    serverHealth = Isserverishealthy();
+                    serverHealth = self.Isserverishealthy();
 
                     side = ""
                     size = 0
@@ -1068,7 +1068,7 @@ class ChannelBreakOut:
                     time.sleep(40);
 
                     #serverHealthを再確認 
-                    serverHealth = Isserverishealthy();
+                    serverHealth = self.Isserverishealthy();
 
                     side = ""
                     size = 0
@@ -1145,7 +1145,7 @@ class ChannelBreakOut:
                     time.sleep(40);
 
                     #serverHealthを再確認 
-                    serverHealth = Isserverishealthy();
+                    serverHealth = self.Isserverishealthy();
 
                     side = ""
                     size = 0
