@@ -953,7 +953,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"] -100;
                     #IFOCOはSTOPが2000下,指値が500上
-                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 2000,parentprice = self.parentprice ,price = self.parentprice + 500)
+                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 3000,parentprice = self.parentprice ,price = self.parentprice + 500)
                     time.sleep(60);
 
                     side = ""
@@ -985,7 +985,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"] +100;
                     #IFOCOはSTOPが2000上,指値が500下
-                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 2000,parentprice = self.parentprice ,price = self.parentprice - 500)
+                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 3000,parentprice = self.parentprice ,price = self.parentprice - 500)
                     time.sleep(60);
 
                     side = ""
@@ -1024,6 +1024,7 @@ class ChannelBreakOut:
                     message = "pos = 1, but I cant getmypos.";
                     self.lineNotify(message)
                     pos = 0;
+                    time.sleep(180);
                     #self.order.cancelAllOrder();
 
                 #ロングクローズ
@@ -1094,6 +1095,7 @@ class ChannelBreakOut:
                     message = "pos = -1, but I cant getmypos.";
                     self.lineNotify(message)
                     pos = 0;
+                    time.sleep(180);
                     #self.order.cancelAllOrder();
 
                 #ショートクローズ
