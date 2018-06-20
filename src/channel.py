@@ -275,8 +275,12 @@ class ChannelBreakOut:
         ローソク足は1分ごとに取得するのでインデックスが-1のもの（現在より1本前）をつかう．
 
         """
+
         #MACDの計算 
-        macd, macdsignal, macdhist = ta.MACD(np.array(df_candleStick["close"][:], dtype='f8'), fastperiod=12, slowperiod=26, signalperiod=9);
+        try:
+            macd, macdsignal, macdhist = ta.MACD(np.array(df_candleStick["close"][:], dtype='f8'), fastperiod=12, slowperiod=26, signalperiod=9);
+        except:
+            pass;
 
         #rciもチェックする
         judgementrci = [0,0,0,0];
@@ -334,22 +338,25 @@ class ChannelBreakOut:
         #    judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消)
 
         #MACD戦略 
-        if pos == 0 and macd[-1] < macdsignal[-1]:
-            judgement[1] = 1        #ショートエントリー
-            if rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
-                judgement[1] = 0
-            if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
-                judgement[1] = 0
-        if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
-            judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消) 
-        if pos == 0 and macd[-1] > macdsignal[-1]:
-            judgement[0] = 1        #ロングエントリー
-            if rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
-                judgement[0] = 0
-            if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
-                judgement[0] = 0
-        if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
-            judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消) 
+        try:
+            if pos == 0 and macdhist[-2] > macdhist[-1]:
+                judgement[1] = 1        #ショートエントリー
+                if rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
+                    judgement[1] = 0
+                if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
+                    judgement[1] = 0
+            if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
+                judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消) 
+            if pos == 0 and macdhist[-2] < macdhist[-1]:
+                judgement[0] = 1        #ロングエントリー
+                if rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
+                    judgement[0] = 0
+                if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
+                    judgement[0] = 0
+            if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
+                judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消) 
+        except:
+            pass;
 
         #IFDOCOはうまく機能しないときがあるのでそのときのため 
         if pos == 1:
