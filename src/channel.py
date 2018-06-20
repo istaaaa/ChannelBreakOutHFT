@@ -21,6 +21,7 @@ import threading
 from collections import deque
 from . import bforder
 from . import cryptowatch
+import talib as ta
 
 
 class ChannelBreakOut:
@@ -274,9 +275,11 @@ class ChannelBreakOut:
         ローソク足は1分ごとに取得するのでインデックスが-1のもの（現在より1本前）をつかう．
 
         """
+        #MACDの計算 
+        macd, macdsignal, macdhist = ta.MACD(np.array(df_candleStick["close"][:], dtype='f8'), fastperiod=12, slowperiod=26, signalperiod=9);
 
         #rciもチェックする
-        judgementrci = [0,0,0,0]
+        judgementrci = [0,0,0,0];
         #9期間RCIの計算 
         rcirangetermNine = self.calc_rci(df_candleStick["high"][:],9);
         logging.info('rcirangetermNine:%s ', rcirangetermNine[-1]);
@@ -321,12 +324,26 @@ class ChannelBreakOut:
             judgement[3] = 1
 
         #特殊状況のエントリー、クローズ 
-        if pos == 0 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75 and rcirangetermNine[-1] > 50:
-            judgement[1] = 1        #ショートエントリー
+        #if pos == 0 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75 and rcirangetermNine[-1] > 50:
+        #    judgement[1] = 1        #ショートエントリー
+        #if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
+        #    judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
+        #if pos == 0 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75 and rcirangetermNine[-1] < -50:
+        #    judgement[0] = 1        #ロングエントリー
+        #if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
+        #    judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消)
+
+        #MACD戦略 
+        if pos == 0 and rcirangetermThirtySix[-1] < 75 and rcirangetermFiftytwo[-1] < 75:
+            if rcirangetermThirtySix[-1] > -75 and rcirangetermFiftytwo[-1] > -75:
+                if macd[-1] < macdsignal[-1]:
+                        judgement[1] = 1        #ショートエントリー
         if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
             judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
-        if pos == 0 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75 and rcirangetermNine[-1] < -50:
-            judgement[0] = 1        #ロングエントリー
+        if pos == 0 and rcirangetermThirtySix[-1] < 75 and rcirangetermFiftytwo[-1] < 75:
+            if rcirangetermThirtySix[-1] > -75 and rcirangetermFiftytwo[-1] > -75:
+                if macd[-1] > macdsignal[-1]:
+                        judgement[0] = 1        #ロングエントリー
         if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
             judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消)
 
@@ -990,7 +1007,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"];
                     #IFOCOはSTOPが2000下,指値が500上
-                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 2500,parentprice = self.parentprice ,price = self.parentprice + 500)
+                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 1500,parentprice = self.parentprice ,price = self.parentprice + 200)
                     time.sleep(60);
 
                     #serverHealthを再確認 
@@ -1026,7 +1043,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"];
                     #IFOCOはSTOPが2000上,指値が500下
-                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 2500,parentprice = self.parentprice ,price = self.parentprice - 500)
+                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 1500,parentprice = self.parentprice ,price = self.parentprice - 200)
                     time.sleep(60);
 
                     #serverHealthを再確認 
