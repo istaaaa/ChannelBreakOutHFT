@@ -65,7 +65,10 @@ class ChannelBreakOut:
         self.fileName = None
         # 現物とFXの価格差がSFDの許容値を超えた場合にエントリーを制限
         self.sfdLimit = True
-
+        # last価格管理用
+        self.lastPositionPrice = 0;
+        # 乖離の価格管理用
+        self.limitprice = 5000;
     @property
     def cost(self):
         return self._cost
@@ -293,7 +296,8 @@ class ChannelBreakOut:
         judgement = [0,0,0,0]
         #上抜けでエントリー 
         if high > entryHighLine[-1] and pos == 0 and rcirangetermNine[-1] < 75:
-            judgement[0] = 1
+            #judgement[0] = 1
+            judgement[0] = 0
             # rci36期間線が75以上のときはエントリーしない 
             if rcirangetermThirtySix[-1] > 75:
                 judgement[0] = 0
@@ -302,7 +306,8 @@ class ChannelBreakOut:
                 judgement[0] = 0
         #下抜けでエントリー 
         if low < entryLowLine[-1] and pos == 0 and rcirangetermNine[-1] > -75:
-            judgement[1] = 1
+            #judgement[1] = 1
+            judgement[1] = 0
             # rci36期間線が-75以下のときはエントリーしない 
             if rcirangetermThirtySix[-1] < -75:
                 judgement[1] = 0
@@ -316,17 +321,33 @@ class ChannelBreakOut:
             judgement[3] = 1
 
         #特殊状況のエントリー、クローズ 
-        if pos == 0 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
-            judgement[1] = 1        #ショートエントリー
-        if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 80:
+        if pos == 0 and rcirangetermThirtySix[-1] < 75 and rcirangetermFiftytwo[-1] < 75:
+            if rcirangetermThirtySix[-1] > -75 and rcirangetermFiftytwo[-1] > -75:
+                if (rcirangetermThirtySix[-1] < rcirangetermFiftytwo[-1]):
+                    if rcirangetermNine[-2] > rcirangetermNine[-1]: 
+                        judgement[1] = 1        #ショートエントリー
+        if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
             judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
-        if pos == 0 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
-            judgement[0] = 1        #ロングエントリー
+        if pos == 0 and rcirangetermThirtySix[-1] < 75 and rcirangetermFiftytwo[-1] < 75:
+            if rcirangetermThirtySix[-1] > -75 and rcirangetermFiftytwo[-1] > -75:
+                if (rcirangetermThirtySix[-1] > rcirangetermFiftytwo[-1]):
+                    if rcirangetermNine[-2] < rcirangetermNine[-1]: 
+                        judgement[0] = 1        #ロングエントリー
         if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
             judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消)
 
+        #IFDOCOはうまく機能しないときがあるのでそのときのため 
+        if pos == 1:
+            if self.lastPositionPrice - high > self.limitprice:
+                logging.error("IFDOCO is not functioned.")
+                judgement[2] = 1        #ロングクローズ(異常のためポジションの解消)
+        if pos == -1:
+            if low - self.lastPositionPrice < self.limitprice:
+                logging.error("IFDOCO is not functioned.")
+                judgement[3] = 1        #ショートクローズ(異常のためポジションの解消)
+
         return judgement
-    
+
     #rciのdの計算
     def dofrci(self, itv,src):
        from scipy.stats import rankdata
@@ -371,18 +392,18 @@ class ChannelBreakOut:
         #緑が点灯しているときはエントリーしない
         if wvf[len(wvf)-1] > rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] > upperBand[len(wvf)-1]:
             return 'buy'
-            #print("VIX: 緑")
-        #elif wvf[len(wvf)-2] > rangeHigh[len(wvf)-2] or wvf[len(wvf)-2] > upperBand[len(wvf)-2]:
-            #if wvf[len(wvf)-1] < rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] < upperBand[len(wvf)-1]:
-                #print('VIX: 緑からグレー')
+            print("VIX: 緑")
+        elif wvf[len(wvf)-2] > rangeHigh[len(wvf)-2] or wvf[len(wvf)-2] > upperBand[len(wvf)-2]:
+            if wvf[len(wvf)-1] < rangeHigh[len(wvf)-1] or wvf[len(wvf)-1] < upperBand[len(wvf)-1]:
+                print('VIX: 緑からグレー')
                 #return 'buy'
         #赤が点灯しているときはエントリーしない
         elif wvf[len(wvf)-1] < rangeLow[len(wvf)-1] or wvf[len(wvf)-1] < lowerBand[len(wvf)-1]:
             return 'sell'
-            #print("VIX: 赤")
-        #elif wvf[len(wvf)-2] < rangeLow[len(wvf)-2] or wvf[len(wvf)-2] < lowerBand[len(wvf)-2]:
-            #if wvf[len(wvf)-1] > rangeLow[len(wvf)-1] or wvf[len(wvf)-1] > lowerBand[len(wvf)-1]:
-                #print('VIX: 赤からグレー')
+            print("VIX: 赤")
+        elif wvf[len(wvf)-2] < rangeLow[len(wvf)-2] or wvf[len(wvf)-2] < lowerBand[len(wvf)-2]:
+            if wvf[len(wvf)-1] > rangeLow[len(wvf)-1] or wvf[len(wvf)-1] > lowerBand[len(wvf)-1]:
+                print('VIX: 赤からグレー')
                 #return 'sell'
         else:
             pass
@@ -879,6 +900,8 @@ class ChannelBreakOut:
             else:
                 pass
 
+
+
             #直近約定件数30件の高値と安値
             try:
                 high = max([self.executions[-1-i]["price"] for i in range(30)])
@@ -966,16 +989,16 @@ class ChannelBreakOut:
             #RangeがTrueでしかエントリーしない 
             #VixFlagが0でしかエントリーしない 
             #if pos == 0 and isRange[-1] and isRange[-2] and isRange[-3] and isRange[-4] and isRange[-5] and serverHealth and vixFlag == 0:
-            if pos == 0 and vixFlag == 0 and serverHealth:
+            if pos == 0 and serverHealth:
                 #ロングエントリー
-                if judgement[0]:
+                if judgement[0] and vixFlag == 0:
                     logging.info("Long entry order")
                     #orderId = self.order.market(size=lot, side="BUY")
                     
                     #親指値は最後の約定の値
-                    self.parentprice = self._executions[-1]["price"] -100;
+                    self.parentprice = self._executions[-1]["price"];
                     #IFOCOはSTOPが2000下,指値が500上
-                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 3000,parentprice = self.parentprice ,price = self.parentprice + 500)
+                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 1500,parentprice = self.parentprice ,price = self.parentprice + 500)
                     time.sleep(60);
 
                     #serverHealthを再確認 
@@ -1001,16 +1024,17 @@ class ChannelBreakOut:
                     self.lineNotify(message)
                     logging.info(message)
                     lastPositionPrice = best_ask
+                    self.lastPositionPrice = lastPositionPrice;
                     self.writeorderhistory( best_ask, lot, 0, pos )
                 #ショートエントリー
-                elif judgement[1]:
+                elif judgement[1] and vixFlag == 0:
                     logging.info("Short entry order")
                     #orderId = self.order.market(size=lot,side="SELL")
 
                     #親指値は最後の約定の値
-                    self.parentprice = self._executions[-1]["price"] +100;
+                    self.parentprice = self._executions[-1]["price"];
                     #IFOCOはSTOPが2000上,指値が500下
-                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 3000,parentprice = self.parentprice ,price = self.parentprice - 500)
+                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 1500,parentprice = self.parentprice ,price = self.parentprice - 500)
                     time.sleep(60);
 
                     #serverHealthを再確認 
@@ -1036,6 +1060,7 @@ class ChannelBreakOut:
                     self.lineNotify(message)
                     logging.info(message)
                     lastPositionPrice = best_bid
+                    self.lastPositionPrice = lastPositionPrice;
                     self.writeorderhistory( best_bid, lot, 0, pos )
 
             elif pos == 1 and serverHealth:
@@ -1052,7 +1077,7 @@ class ChannelBreakOut:
                     message = "pos = 1, but I cant getmypos.";
                     self.lineNotify(message)
                     pos = 0;
-                    time.sleep(180);
+                    time.sleep(60);
                     #self.order.cancelAllOrder();
 
                 #ロングクローズ
@@ -1064,7 +1089,7 @@ class ChannelBreakOut:
                     #IFOCOはSTOPが1000上,指値が1000下(IFDOCOは子注文が残ってしまうのでやめた）
                     #orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 1000,parentprice = self.parentprice ,price = self.parentprice - 1000)
                     #OCOはSTOPが1000下,指値が1000上（自信なし）
-                    orderId = self.order.OCO( side="SELL", size=lot,trigger_price = self.parentprice - 500, price = self.parentprice + 500)
+                    orderId = self.order.OCO( side="SELL", size=lot,trigger_price = self.parentprice - 200, price = self.parentprice + 200)
                     time.sleep(40);
 
                     #serverHealthを再確認 
@@ -1126,7 +1151,7 @@ class ChannelBreakOut:
                     message = "pos = -1, but I cant getmypos.";
                     self.lineNotify(message)
                     pos = 0;
-                    time.sleep(180);
+                    time.sleep(60);
                     #self.order.cancelAllOrder();
 
                 #ショートクローズ
@@ -1141,7 +1166,7 @@ class ChannelBreakOut:
                     #IFOCOはSTOPが1000下,指値が1000上(IFDOCOは子注文が残ってしまうのでやめた）
                     #orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 1000,parentprice = self.parentprice ,price = self.parentprice + 1000)
                     #OCOはSTOPが1000上,指値が1000下（自信なし）
-                    orderId = self.order.OCO( side="BUY", size=lot,trigger_price = self.parentprice + 500, price = self.parentprice - 500)
+                    orderId = self.order.OCO( side="BUY", size=lot,trigger_price = self.parentprice + 200, price = self.parentprice - 200)
                     time.sleep(40);
 
                     #serverHealthを再確認 

@@ -345,16 +345,21 @@ class BFOrder:
         side = ""
         size = 0
         response = {"status": "internalError in bforder.py"}
-        try:
-            poss = self.api.getpositions(product_code = "FX_BTC_JPY")
+        index =0
+        while(index < 50):
+            try:
+                poss = self.api.getpositions(product_code = "FX_BTC_JPY")
 
-            #もしポジションがあれば合計値を取得
-            if len(poss) != 0:
-                for pos in poss:
-                    side = pos["side"]
-                    size += pos["size"]
-        except:
-            pass
+                #もしポジションがあれば合計値を取得
+                if len(poss) != 0:
+                    for pos in poss:
+                        side = pos["side"]
+                        size += pos["size"]
+                break;
+            except:
+                pass
+            time.sleep(0.5)
+            index += 1
         return side,size
 
     def getmyparentorder(self):
@@ -364,7 +369,6 @@ class BFOrder:
         response = {"status": "internalError in bforder.py"}
         try:
             orders = self.api.getparentorders(product_code = "FX_BTC_JPY")
-
             #もしポジションがあれば合計値を取得
             if len(orders) != 0:
                 for order in orders:
@@ -380,7 +384,11 @@ class BFOrder:
 
     #すべての注文をキャンセル
     def cancelAllOrder(self):
-        try:
-            self.api.cancelallchildorders(product_code = "FX_BTC_JPY")
-        except:
-            pass
+        index =0
+        while(index < 50):
+            try:
+                self.api.cancelallchildorders(product_code = "FX_BTC_JPY")
+                break;
+            except:
+                pass
+            index += 1
