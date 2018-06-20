@@ -68,7 +68,7 @@ class ChannelBreakOut:
         # last価格管理用
         self.lastPositionPrice = 0;
         # 乖離の価格管理用
-        self.limitprice = 5000;
+        self.limitprice = 3000;
     @property
     def cost(self):
         return self._cost
@@ -321,18 +321,12 @@ class ChannelBreakOut:
             judgement[3] = 1
 
         #特殊状況のエントリー、クローズ 
-        if pos == 0 and rcirangetermThirtySix[-1] < 75 and rcirangetermFiftytwo[-1] < 75:
-            if rcirangetermThirtySix[-1] > -75 and rcirangetermFiftytwo[-1] > -75:
-                if (rcirangetermThirtySix[-1] < rcirangetermFiftytwo[-1]):
-                    if rcirangetermNine[-2] > rcirangetermNine[-1]: 
-                        judgement[1] = 1        #ショートエントリー
+        if pos == 0 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75 and rcirangetermNine[-1] > 50:
+            judgement[1] = 1        #ショートエントリー
         if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
             judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消)
-        if pos == 0 and rcirangetermThirtySix[-1] < 75 and rcirangetermFiftytwo[-1] < 75:
-            if rcirangetermThirtySix[-1] > -75 and rcirangetermFiftytwo[-1] > -75:
-                if (rcirangetermThirtySix[-1] > rcirangetermFiftytwo[-1]):
-                    if rcirangetermNine[-2] < rcirangetermNine[-1]: 
-                        judgement[0] = 1        #ロングエントリー
+        if pos == 0 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75 and rcirangetermNine[-1] < -50:
+            judgement[0] = 1        #ロングエントリー
         if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
             judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消)
 
@@ -900,8 +894,6 @@ class ChannelBreakOut:
             else:
                 pass
 
-
-
             #直近約定件数30件の高値と安値
             try:
                 high = max([self.executions[-1-i]["price"] for i in range(30)])
@@ -998,7 +990,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"];
                     #IFOCOはSTOPが2000下,指値が500上
-                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 1500,parentprice = self.parentprice ,price = self.parentprice + 500)
+                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 2500,parentprice = self.parentprice ,price = self.parentprice + 500)
                     time.sleep(60);
 
                     #serverHealthを再確認 
@@ -1034,7 +1026,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"];
                     #IFOCOはSTOPが2000上,指値が500下
-                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 1500,parentprice = self.parentprice ,price = self.parentprice - 500)
+                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 2500,parentprice = self.parentprice ,price = self.parentprice - 500)
                     time.sleep(60);
 
                     #serverHealthを再確認 
