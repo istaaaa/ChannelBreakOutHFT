@@ -282,6 +282,8 @@ class ChannelBreakOut:
         except:
             pass;
 
+        logging.info('macdDiff:%s ',macdhist[-2] - macdhist[-1]);
+
         #rciもチェックする
         judgementrci = [0,0,0,0];
         #9期間RCIの計算 
@@ -345,6 +347,10 @@ class ChannelBreakOut:
                     judgement[1] = 0
                 if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
                     judgement[1] = 0
+                if rcirangetermNine[-1] > 75:
+                    judgement[1] = 0
+                if rcirangetermNine[-1] < -75:
+                    judgement[1] = 0
             if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
                 judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消) 
             if pos == 0 and macdhist[-2] < macdhist[-1]:
@@ -353,6 +359,10 @@ class ChannelBreakOut:
                     judgement[0] = 0
                 if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
                     judgement[0] = 0
+                if rcirangetermNine[-1] > 75:
+                    judgement[1] = 0
+                if rcirangetermNine[-1] < -75:
+                    judgement[1] = 0
             if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
                 judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消) 
         except:
@@ -1011,12 +1021,12 @@ class ChannelBreakOut:
             #if pos == 0 and isRange[-1] and isRange[-2] and isRange[-3] and isRange[-4] and isRange[-5] and serverHealth and vixFlag == 0:
             if pos == 0 and serverHealth:
                 #ロングエントリー
-                if judgement[0] and vixFlag == 0:
+                if judgement[0]:
                     logging.info("Long entry order")
                     #orderId = self.order.market(size=lot, side="BUY")
                     
                     #親指値は最後の約定の値
-                    self.parentprice = self._executions[-1]["price"];
+                    self.parentprice = self._executions[-1]["price"]-100;
                     #IFOCOはSTOPが2000下,指値が500上
                     orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 1500,parentprice = self.parentprice ,price = self.parentprice + 200)
                     time.sleep(60);
@@ -1047,12 +1057,12 @@ class ChannelBreakOut:
                     self.lastPositionPrice = lastPositionPrice;
                     self.writeorderhistory( best_ask, lot, 0, pos )
                 #ショートエントリー
-                elif judgement[1] and vixFlag == 0:
+                elif judgement[1]:
                     logging.info("Short entry order")
                     #orderId = self.order.market(size=lot,side="SELL")
 
                     #親指値は最後の約定の値
-                    self.parentprice = self._executions[-1]["price"];
+                    self.parentprice = self._executions[-1]["price"]+100;
                     #IFOCOはSTOPが2000上,指値が500下
                     orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 1500,parentprice = self.parentprice ,price = self.parentprice - 200)
                     time.sleep(60);
