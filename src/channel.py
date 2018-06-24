@@ -251,22 +251,56 @@ class ChannelBreakOut:
         """
         売り買い判断．ローソク足の高値が期間高値を上抜けたら買いエントリー．（2）ローソク足の安値が期間安値を下抜けたら売りエントリー．judgementリストは[買いエントリー，売りエントリー，買いクローズ（売り），売りクローズ（買い）]のリストになっている．（二次元リスト）リスト内リストはの要素は，0（シグナルなし）,価格（シグナル点灯）を取る．
         """
+        #MACDの計算 
+        try:
+            macd, macdsignal, macdhist = ta.MACD(np.array(df_candleStick["close"][:], dtype='f8'), fastperiod=12, slowperiod=26, signalperiod=9);
+        except:
+            pass;
+
+        #9期間RCIの計算 
+        rcirangetermNine = self.calc_rci(df_candleStick["close"][:],9);
+        logging.info('rcirangetermNine:%s ', rcirangetermNine[-1]);
+        rcirangetermThirtySix = self.calc_rci(df_candleStick["close"][:],36);
+        logging.info('rcirangetermThirtySix:%s ', rcirangetermThirtySix[-1]);
+        rcirangetermFiftytwo = self.calc_rci(df_candleStick["close"][:],52);
+        logging.info('rcirangetermFiftytwo:%s ', rcirangetermFiftytwo[-1]);
+
+        time.sleep(10)
+
         judgement = [[0,0,0,0] for i in range(len(df_candleStick.index))]
         for i in range(len(df_candleStick.index)):
-            #上抜けでエントリー
-            if df_candleStick["high"][i] > entryHighLine[i] and i >= entryTerm:
-                judgement[i][0] = round((df_candleStick["high"][i] + entryHighLine[i]*2) / 3)
-            #下抜けでエントリー
-            if df_candleStick["low"][i] < entryLowLine[i] and i >= entryTerm:
-                judgement[i][1] = round((df_candleStick["low"][i] + entryLowLine[i]*2) / 3)
-            #下抜けでクローズ
-            if df_candleStick["low"][i] < closeLowLine[i] and i >= entryTerm:
-                judgement[i][2] = round((df_candleStick["low"][i] + closeLowLine[i]*2) / 3)
-            #上抜けでクローズ
-            if df_candleStick["high"][i] > closeHighLine[i] and i >= entryTerm:
-                judgement[i][3] = round((df_candleStick["high"][i] + closeHighLine[i]*2) / 3)
-            else:
-                pass
+
+            try:
+                #上抜けでエントリー
+                if macdhist[i-1] < macdhist[i] and macdhist[i] < 0:
+                    judgement[i][0] = round((df_candleStick["close"][i]))
+                    if rcirangetermThirtySix[i] > 75 and rcirangetermFiftytwo[i] > 75:
+                        judgement[i][0] = 0
+                    if rcirangetermThirtySix[i] < -75 and rcirangetermFiftytwo[i] < -75:
+                        judgement[i][0] = 0
+                    if rcirangetermNine[i] < -75 and rcirangetermNine[i] < -75:
+                        judgement[i][0] = 0
+                    buyprice = judgement[i][0]
+                #下抜けでエントリー
+                if macdhist[i-1] > macdhist[i] and macdhist[i] > 0:
+                    judgement[i][1] = round((df_candleStick["close"][i]))
+                    if rcirangetermThirtySix[i] > 75 and rcirangetermFiftytwo[i] > 75:
+                        judgement[i][1] = 0
+                    if rcirangetermThirtySix[i] < -75 and rcirangetermFiftytwo[i] < -75:
+                        judgement[i][1] = 0
+                    if rcirangetermNine[i] < -75 and rcirangetermNine[i] < -75:
+                        judgement[i][1] = 0
+                    sellprice = judgement[i][0]
+                #下抜けでbuyクローズ
+                if macdhist[i] < 0:
+                    judgement[i][2] = round((df_candleStick["close"][i]))
+                #上抜けでsellクローズ
+                if round((df_candleStick["close"][i])) < sellprice - 100 or round((df_candleStick["close"][i])) > sellprice + 1000:
+                    judgement[i][3] = round((df_candleStick["close"][i]))
+                else:
+                    pass
+            except:
+                pass;
         return judgement
 
     def judgeForLoop(self, high, low, entryHighLine, entryLowLine, closeHighLine, closeLowLine, df_candleStick, pos):
@@ -281,6 +315,7 @@ class ChannelBreakOut:
             macd, macdsignal, macdhist = ta.MACD(np.array(df_candleStick["close"][:], dtype='f8'), fastperiod=12, slowperiod=26, signalperiod=9);
         except:
             pass;
+
 
         logging.info('macdDiff:%s ',macdhist[-2] - macdhist[-1]);
 
@@ -323,10 +358,10 @@ class ChannelBreakOut:
             if rcirangetermFiftytwo[-1] < -75:
                 judgement[1] = 0
         #下抜けでクローズ 
-        if low < closeLowLine[-1] and pos == 1 and ordersize == 0 and childordersize == 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
+        if low < closeLowLine[-1] and pos == 1 and ordersize == 0 and childordersize == 0 and size != 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
             judgement[2] = 1
         #上抜けでクローズ 
-        if high > closeHighLine[-1] and pos == -1 and ordersize == 0 and childordersize == 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
+        if high > closeHighLine[-1] and pos == -1 and ordersize == 0 and childordersize == 0 and size != 0:   #基本はClose処理はIFDOCOに任せる。異常なときはこれで
             judgement[3] = 1
 
         #特殊状況のエントリー、クローズ 
@@ -347,10 +382,6 @@ class ChannelBreakOut:
                     judgement[1] = 0
                 if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
                     judgement[1] = 0
-                if rcirangetermNine[-1] > 75:
-                    judgement[1] = 0
-                if rcirangetermNine[-1] < -75:
-                    judgement[1] = 0
             if pos == 1 and rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
                 judgement[2] = 1        #ロングクローズ(暴落の危険が高いのでポジションの解消) 
             if pos == 0 and macdhist[-2] < macdhist[-1]:
@@ -359,10 +390,6 @@ class ChannelBreakOut:
                     judgement[0] = 0
                 if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
                     judgement[0] = 0
-                if rcirangetermNine[-1] > 75:
-                    judgement[1] = 0
-                if rcirangetermNine[-1] < -75:
-                    judgement[1] = 0
             if pos == 1 and rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
                 judgement[3] = 1        #ショートクローズ(暴騰の危険が高いのでポジションの解消) 
         except:
@@ -1028,7 +1055,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"]-100;
                     #IFOCOはSTOPが2000下,指値が500上
-                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 1500,parentprice = self.parentprice ,price = self.parentprice + 200)
+                    orderId = self.order.IFDOCO( side="BUY", size=lot,trigger_price = self.parentprice - 1000,parentprice = self.parentprice ,price = self.parentprice + 200)
                     time.sleep(60);
 
                     #serverHealthを再確認 
@@ -1064,7 +1091,7 @@ class ChannelBreakOut:
                     #親指値は最後の約定の値
                     self.parentprice = self._executions[-1]["price"]+100;
                     #IFOCOはSTOPが2000上,指値が500下
-                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 1500,parentprice = self.parentprice ,price = self.parentprice - 200)
+                    orderId = self.order.IFDOCO( side="SELL", size=lot,trigger_price = self.parentprice + 1000,parentprice = self.parentprice ,price = self.parentprice - 200)
                     time.sleep(60);
 
                     #serverHealthを再確認 
