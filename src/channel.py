@@ -265,7 +265,7 @@ class ChannelBreakOut:
         rcirangetermFiftytwo = self.calc_rci(df_candleStick["close"][:],52);
         logging.info('rcirangetermFiftytwo:%s ', rcirangetermFiftytwo[-1]);
 
-        time.sleep(10)
+        callback = self.vixfix(np.array(df_candleStick["close"][:]), np.array(df_candleStick["low"][:]))
 
         judgement = [[0,0,0,0] for i in range(len(df_candleStick.index))]
         for i in range(len(df_candleStick.index)):
@@ -274,28 +274,66 @@ class ChannelBreakOut:
                 #上抜けでエントリー
                 if macdhist[i-1] < macdhist[i] and macdhist[i] < 0:
                     judgement[i][0] = round((df_candleStick["close"][i]))
-                    if rcirangetermThirtySix[i] > 75 and rcirangetermFiftytwo[i] > 75:
+                    if rcirangetermThirtySix[i] > 40 and rcirangetermFiftytwo[i] > 40:
                         judgement[i][0] = 0
-                    if rcirangetermThirtySix[i] < -75 and rcirangetermFiftytwo[i] < -75:
+                    if rcirangetermThirtySix[i] < -40 and rcirangetermFiftytwo[i] < -40:
                         judgement[i][0] = 0
-                    if rcirangetermNine[i] < -75 and rcirangetermNine[i] < -75:
+                    if rcirangetermNine[i] < -75 or rcirangetermNine[i] > 75:
                         judgement[i][0] = 0
+
+
+                    callback = self.vixfix(np.array(df_candleStick["close"][:i]), np.array(df_candleStick["low"][:i]))
+                    
+                    if callback == 'buy':
+                        #Buy
+                        vixFlag = 1
+                    elif callback == 'sell':
+                        #Sell
+                        vixFlag = 2
+                    else:
+                        #Stay
+                        vixFlag = 0
+                    if vixFlag != 0:
+                        judgement[i][0] = 0
+
                     buyprice = judgement[i][0]
                 #下抜けでエントリー
                 if macdhist[i-1] > macdhist[i] and macdhist[i] > 0:
                     judgement[i][1] = round((df_candleStick["close"][i]))
-                    if rcirangetermThirtySix[i] > 75 and rcirangetermFiftytwo[i] > 75:
+                    if rcirangetermThirtySix[i] > 40 and rcirangetermFiftytwo[i] > 40:
                         judgement[i][1] = 0
-                    if rcirangetermThirtySix[i] < -75 and rcirangetermFiftytwo[i] < -75:
+                    if rcirangetermThirtySix[i] < -40 and rcirangetermFiftytwo[i] < -40:
                         judgement[i][1] = 0
-                    if rcirangetermNine[i] < -75 and rcirangetermNine[i] < -75:
+                    if rcirangetermNine[i] < -75 or rcirangetermNine[i] > 75:
                         judgement[i][1] = 0
+
+                    callback = self.vixfix(np.array(df_candleStick["close"][:i]), np.array(df_candleStick["low"][:i]))
+                    
+                    if callback == 'buy':
+                        #Buy
+                        vixFlag = 1
+                    elif callback == 'sell':
+                        #Sell
+                        vixFlag = 2
+                    else:
+                        #Stay
+                        vixFlag = 0
+                    if vixFlag != 0:
+                        judgement[i][1] = 0
+
+
                     sellprice = judgement[i][0]
                 #下抜けでbuyクローズ
-                if macdhist[i] < 0:
+                if macdhist[i] > 0:
                     judgement[i][2] = round((df_candleStick["close"][i]))
                 #上抜けでsellクローズ
-                if round((df_candleStick["close"][i])) < sellprice - 100 or round((df_candleStick["close"][i])) > sellprice + 1000:
+                if macdhist[i] < 0:
+                    judgement[i][3] = round((df_candleStick["close"][i]))
+                #下抜けでbuyクローズ
+                if rcirangetermThirtySix[-1] > 75 and rcirangetermFiftytwo[-1] > 75:
+                    judgement[i][2] = round((df_candleStick["close"][i]))
+                #上抜けでsellクローズ
+                if rcirangetermThirtySix[-1] < -75 and rcirangetermFiftytwo[-1] < -75:
                     judgement[i][3] = round((df_candleStick["close"][i]))
                 else:
                     pass
@@ -1046,7 +1084,7 @@ class ChannelBreakOut:
             #RangeがTrueでしかエントリーしない 
             #VixFlagが0でしかエントリーしない 
             #if pos == 0 and isRange[-1] and isRange[-2] and isRange[-3] and isRange[-4] and isRange[-5] and serverHealth and vixFlag == 0:
-            if pos == 0 and serverHealth:
+            if pos == 0 and vixFlag == 0 and serverHealth:
                 #ロングエントリー
                 if judgement[0]:
                     logging.info("Long entry order")
